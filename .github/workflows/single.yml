@@ -15,8 +15,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build u-boot for Orange pi 5
-        run: /bin/bash  ./das-u-boot.sh orangepi-5-rk3588s_defconfig
+      - name: Build u-boot for NanoPC T6
+        run: /bin/bash  ./das-u-boot.sh nanopc-t6-rk3588s_defconfig
 
       - name: Build kernel
         run: /bin/bash ./build-kernel.sh arm64 2>&1|tee log1
@@ -27,11 +27,11 @@ jobs:
             chmod +x ubuntu-image.sh
             sudo  ./ubuntu-image.sh
 
-      - name: Build disk image fot Orange pi 5
+      - name: Build disk image fot NanoPC T6
         run:  |
             chmod +x disk_image.sh
-            sudo  ./disk_image.sh arm64 orangepi-5 rk3588s-orangepi-5
-            mv u-boot-rockchip.bin orangepi-5-u-boot-rockchip.bin
+            sudo  ./disk_image.sh arm64 nanopc-t6 rk3588-nanopc-t6
+            mv u-boot-rockchip.bin nanopc-t6-u-boot-rockchip.bin
 
       - name: Build u-boot for Orangepi-5-PLUS
         run: /bin/bash  ./das-u-boot.sh orangepi-5-plus-rk3588_defconfig
@@ -68,9 +68,9 @@ jobs:
         with:
           # 実行するたびにユニークなタグ名（例: build-1, build-2...）を付けます
           tag_name: build-${{ github.run_number }}
-          name: "Orange Pi 5 / 5 PLUS Disk Image Build ${{ github.run_number }}"
+          name: "NanoPC T6 / Orangepi 5 PLUS Disk Image Build ${{ github.run_number }}"
           body: |
-            Orange Pi 5 / 5 PLUS  自作ディスクイメージ
+            NanoPC T6 / Orangepi 5 PLUS  自作ディスクイメージ
             ビルド日時: ${{ steps.date.outputs.now }}
             ベースカーネル: ${{ steps.kernel.outputs.kernel_version }}
           draft: false
