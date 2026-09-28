@@ -79,6 +79,7 @@ wget https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/refs/heads/master/
 ./scripts/config --enable CONFIG_BT
 ./scripts/config --enable CONFIG_BT_HCIBTUSB
 ./scripts/config --module CONFIG_BT_RTL# =========================================================
+./scripts/config --disable CONFIG_SND_SOC_ES8388
 
 make olddefconfig
  sed -i 's/CONFIG_LOCALVERSION="-ARCH"/CONFIG_LOCALVERSION=""/' .config
