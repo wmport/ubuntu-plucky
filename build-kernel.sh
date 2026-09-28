@@ -68,17 +68,19 @@ wget https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/refs/heads/master/
 ./scripts/config --disable DEBUG_INFO_DWARF4
 ./scripts/config --disable DEBUG_INFO_DWARF5
 # =========================================================# НАСТРОЙКА ПЕРИФЕРИИ ДЛЯ NANOPC-T6 И RTL8822CE# =========================================================# Встроенная проводная сеть 2.5G Ethernet (Realtek RTL8125BG)
-./scripts/config --enable CONFIG_R8169
-./scripts/config --enable CONFIG_REALTEK_PHY
+#./scripts/config --enable CONFIG_R8169
+#./scripts/config --enable CONFIG_REALTEK_PHY
 # Беспроводная сеть Wi-Fi (Realtek RTL8822CE)
-./scripts/config --enable CONFIG_WLAN_VENDOR_REALTEK
-./scripts/config --module CONFIG_RTW88
-./scripts/config --module CONFIG_RTW88_8822CE
-./scripts/config --module CONFIG_RTW88_PCI
+#./scripts/config --enable CONFIG_WLAN_VENDOR_REALTEK
+#./scripts/config --module CONFIG_RTW88
+#./scripts/config --module CONFIG_RTW88
+#./scripts/config --module CONFIG_RTW88_8822CE
+#./scripts/config --module CONFIG_RTW88_PCI
 # Модуль Bluetooth (Realtek RTL8822CE)
-./scripts/config --enable CONFIG_BT
-./scripts/config --enable CONFIG_BT_HCIBTUSB
-./scripts/config --module CONFIG_BT_RTL# =========================================================
+#./scripts/config --enable CONFIG_BT
+#./scripts/config --enable CONFIG_BT_HCIBTUSB
+#./scripts/config --module CONFIG_BT_RTL# =========================================================
+
 
 make olddefconfig
  sed -i 's/CONFIG_LOCALVERSION="-ARCH"/CONFIG_LOCALVERSION=""/' .config
