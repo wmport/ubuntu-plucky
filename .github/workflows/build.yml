@@ -46,9 +46,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - model: orangepi-5
-            defconfig: orangepi-5-rk3588s_defconfig
-            dtb: rk3588s-orangepi-5
+          - model: nanopc-t6
+            defconfig: nanopc-t6-rk3588_defconfig
+            dtb: rk3588-nanopc-t6
           - model: orangepi-5-plus
             defconfig: orangepi-5-plus-rk3588_defconfig
             dtb: rk3588-orangepi-5-plus
