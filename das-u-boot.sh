@@ -26,9 +26,6 @@ BASE_DIR=$(pwd)
 git clone https://github.com/rockchip-linux/rkbin
 cd rkbin
 # Фиксируем коммит, с которым Mainline U-Boot v2024.01 собирается без ошибок binman
-git checkout 5567b55f1f91b7d532bbf2451f50df642e0fa527
-cd ..
-
 # ИСПРАВЛЕНИЕ: Надежный поиск файлов с проверкой на существование
 DDR_FILE=$(find "${BASE_DIR}/rkbin/bin/rk35/" -name "rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v*.bin" | head -n 1)
 BL31_FILE=$(find "${BASE_DIR}/rkbin/bin/rk35/" -name "rk3588_bl31*.elf" | head -n 1)
