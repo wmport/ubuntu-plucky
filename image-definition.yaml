@@ -39,13 +39,13 @@ customization:
     - name: "apparmor-utils"
     - name: "apparmor-profiles"
     # OEM-установщики (oem-config, ubiquity) отключены, так как образ создается как preinstalled (сразу готовый к работе)
-    # - name: "oem-config-gtk"
-    # - name: "ubiquity-frontend-gtk"
-    # - name: "yaru-theme-unity"
-    # - name: "aptdaemon"
-    # - name: "oem-config"
-    # - name: "oem-config-debconf"
-    # - name: "ubiquity-slideshow-ubuntu"
+    - name: "oem-config-gtk"
+    - name: "ubiquity-frontend-gtk"
+    - name: "yaru-theme-unity"
+    - name: "aptdaemon"
+    - name: "oem-config"
+    - name: "oem-config-debconf"
+    - name: "ubiquity-slideshow-ubuntu"
   extra-snaps:
     - name: snapd
     - name: core24
