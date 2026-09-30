@@ -14,7 +14,7 @@ rootfs:
     - restricted
     - universe
     - multiverse
-  mirror: "http://ubuntu.com/ubuntu-ports/"
+  mirror: "http://ports.ubuntu.com/ubuntu-ports/"
   pocket: updates
   seed:
     urls:
