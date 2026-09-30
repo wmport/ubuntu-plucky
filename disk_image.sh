@@ -1,187 +1,94 @@
-#!/bin/bash
-set -eE 
-trap 'echo Error: in $0 on line $LINENO' ERR
-
-#set -x
+#!/bin/bashset -eE 
 
 cleanup_loopdev() {
     local loop="$1"
-
-    sync --file-system
-    sync
-
-    sleep 1
-
+    sync --file-system && sync && sleep 1
     if [ -b "${loop}" ]; then
         for part in "${loop}"p*; do
-            if mnt=$(findmnt -n -o target -S "$part"); then
-                umount "${mnt}"
-            fi
+            if mnt=$(findmnt -n -o target -S "$part"); then umount "${mnt}"; fi
         done
         losetup -d "${loop}"
     fi
 }
 
 wait_loopdev() {
-    local loop="$1"
-    local seconds="$2"
-
+    local loop="$1" seconds="$2"
     until test $((seconds--)) -eq 0 -o -b "${loop}"; do sleep 1; done
-
     ((++seconds))
-
     ls -l "${loop}" &> /dev/null
 }
-
-if [ "$(id -u)" -ne 0 ]; then 
-    echo "Please run as root"
-    exit 1
-fi
-
-export  LC_ALL=C 
-export  LC_CTYPE=C
-export  LANGUAGE=C
-export  LANG=C
-
-if [ ! -f ./rootfs ]; then 
-	exit 1 
-fi
-
+if [ "$(id -u)" -ne 0 ]; then echo "Please run as root"; exit 1; fi
+export LC_ALL=C LC_CTYPE=C LANGUAGE=C LANG=C
+if [ ! -f ./rootfs ]; then exit 1; fi
 . ./rootfs
 . ./kernel_version
 
-rootfs="$(readlink -f "$rootfs")"
-if [[ "$(basename "${rootfs}")" != *".rootfs.tar" || ! -e "${rootfs}" ]]; then
-    echo "Error: $(basename "${rootfs}") must be a rootfs tarfile"
-    exit 1
-fi
-
 mkdir -p images
-now=`date +%F`
-# Create an empty disk image
+now=$(date +%F)
 img="./Ubuntu-${kernel_version}-$2-$now.img"
 size="$(( $(wc -c < "${rootfs}" ) / 1024 / 1024 ))"
 truncate -s "$(( size + 512 ))M" "${img}"
 
-# Create loop device for disk image
 loop="$(losetup -f)"
 losetup -P "${loop}" "${img}"
 disk="${loop}"
-
-# Cleanup loopdev on early exit
 trap 'cleanup_loopdev ${loop}' EXIT
 
-# Ensure disk is not mounted
 mount_point=/tmp/mnt
 umount "${disk}"* 2> /dev/null || true
 umount ${mount_point}/* 2> /dev/null || true
 mkdir -p ${mount_point}
+# Очищаем таблицу разделов и безопасно шьем загрузчик
+dd if=/dev/zero of="${disk}" count=4096 bs=512 conv=notruncif [ -f "u-boot-rockchip.bin" ]; then
+    dd if="u-boot-rockchip.bin" of="${disk}" bs=512 seek=64 conv=notrunc,fsyncelse
+    echo "u-boot-rockchip.bin not found"; exit 1fi
 
-    # Setup partition table
-    dd if=/dev/zero of="${disk}" count=4096 bs=512
-    parted --script "${disk}" \
-    mklabel gpt \
-    mkpart primary ext4 16MiB 100%
+parted --script "${disk}" mklabel gpt mkpart primary ext4 16MiB 100%
+{ echo "t"; echo "1"; echo "B921B045-1DF0-41C3-AF44-4C6F280D3FAE"; echo "w"; } | fdisk "${disk}" &> /dev/null || true
 
-    # Create partitions
-    {
-        echo "t"
-        echo "1"
-        echo "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
-        echo "w"
-    } | fdisk "${disk}" &> /dev/null || true
+partprobe "${disk}"
+partition_char="$(if [[ ${disk: -1} == [0-9] ]]; then echo p; fi)"
+sleep 1
+wait_loopdev "${disk}${partition_char}1" 60
 
-    partprobe "${disk}"
+root_uuid=$(uuidgen)
+dd if=/dev/zero of="${disk}${partition_char}1" bs=1KB count=10 > /dev/null
+mkfs.ext4 -U "${root_uuid}" -L desktop-rootfs "${disk}${partition_char}1"
 
-    partition_char="$(if [[ ${disk: -1} == [0-9] ]]; then echo p; fi)"
-
-    sleep 1
-
-    wait_loopdev "${disk}${partition_char}1" 60 || {
-        echo "Failure to create ${disk}${partition_char}1 in time"
-        exit 1
-    }
-
-    sleep 1
-
-    # Generate random uuid for bootfs
-    root_uuid=$(uuidgen)
-
-    # Create filesystems on partitions
-    dd if=/dev/zero of="${disk}${partition_char}1" bs=1KB count=10 > /dev/null
-    mkfs.ext4 -U "${root_uuid}" -L desktop-rootfs "${disk}${partition_char}1"
-
-    # Mount partitions
-    mkdir -p ${mount_point}/writable
-    mount "${disk}${partition_char}1" ${mount_point}/writable
-
-
-# Copy the rootfs to root partition
+mkdir -p ${mount_point}/writable
+mount "${disk}${partition_char}1" ${mount_point}/writable
 tar -xpf "${rootfs}" -C ${mount_point}/writable
 
 fdt_name="rockchip/$3.dtb"
 dtbs_install_path="/usr/lib/linux-image-"
-
 if [ ! -f ${mount_point}/writable${dtbs_install_path}${kernel_version}/${fdt_name} ]; then
-	echo "${dtbs_install_path}${kernel_version}/${fdt_name}"
-	echo "$3.dtb not found"
-	exit 1
-fi
+    if [ -f ${mount_point}/writable/boot/dtbs/${kernel_version}/${fdt_name} ]; then
+        dtbs_install_path="/boot/dtbs/"
+    else
+        echo "Error: $3.dtb not found in rootfs!"; exit 1
+    fifi
 
-
-
-# Create fstab entries
 echo "# <file system>     <mount point>  <type>  <options>   <dump>  <fsck>" > ${mount_point}/writable/etc/fstab
 echo "UUID=${root_uuid,,} /              ext4    defaults,x-systemd.growfs    0       1" >> ${mount_point}/writable/etc/fstab
 
-
-# Write bootloader to disk image
-if [ -f "u-boot-rockchip.bin" ]; then
-    dd if="u-boot-rockchip.bin" of="${loop}" seek=1 bs=32k conv=fsync
-else
-	echo "/u-boot-rockchip.bin not found"
-	exit 1
-fi
-
+mkdir -p ${mount_point}/writable/etc/default
 echo U_BOOT_FDT='"'"$fdt_name"'"' >> ${mount_point}/writable/etc/default/u-boot
 echo U_BOOT_FDT_DIR='"'"$dtbs_install_path"'"' >> ${mount_point}/writable/etc/default/u-boot
-#echo U_BOOT_FDT_OVERLAYS_DIR='"/usr/lib/linux-image-"' >> ${mount_point}/writable/etc/default/u-boot
-
-echo "---------------Check the u-boot settings.----------------"
-cat ${mount_point}/writable/etc/default/u-boot
-echo "----------------------------------------------------------"
 
 mountpoint="${mount_point}/writable"
-
 mount dev-live -t devtmpfs "$mountpoint/dev"
 mount devpts-live -t devpts -o nodev,nosuid "$mountpoint/dev/pts"
 mount proc-live -t proc "$mountpoint/proc"
 mount sysfs-live -t sysfs "$mountpoint/sys"
 mount securityfs -t securityfs "$mountpoint/sys/kernel/security"
 
-# u-boot-update 
-chroot ${mount_point}/writable/ /bin/bash -c "u-boot-update&&sync"
+chroot ${mount_point}/writable/ /bin/bash -c "u-boot-update && sync"
+sync --file-system && sync
 
-sync --file-system
-sync
-
-umount "$mountpoint/sys/kernel/security"
-umount "$mountpoint/sys"
-umount "$mountpoint/proc"
-umount "$mountpoint/dev/pts"
-umount "$mountpoint/dev"
-umount "$mountpoint"
-
-# Umount partitions
-
-# Remove loop device
+umount "$mountpoint/sys/kernel/security" "$mountpoint/sys" "$mountpoint/proc" "$mountpoint/dev/pts" "$mountpoint/dev" "$mountpoint"
 losetup -d "${loop}"
-
-# Exit trap is no longer needed
 trap '' EXIT
 
 echo -e "\nCompressing $(basename "${img}.xz")\n"
 xz -v -9 -T0 "${img}"
-#rm "${img}"
-#cd ./images && sha256sum "$(basename "${img}.xz")" > "$(basename "${img}.xz.sha256")"
 exit 0
