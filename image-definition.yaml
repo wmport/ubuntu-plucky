@@ -3,8 +3,9 @@ name: ubuntu-rootfs
 display-name: Ubuntu rootfs ARM64
 revision: 2
 architecture: arm64
-series: resolute
+series: resolute # РЕКОМЕНДАЦИЯ: Если 'resolute' еще не полностью доступен на ://ubuntu.com, используйте 'noble' (24.04)
 class: preinstalled
+
 rootfs:
   archive: ubuntu
   sources-list-deb822: true
@@ -13,14 +14,15 @@ rootfs:
     - restricted
     - universe
     - multiverse
-  mirror: "http://ubuntu.com"
+  mirror: "http://://ubuntu.com/ubuntu-ports/"
   pocket: updates
   seed:
     urls:
       - "https://launchpad.net"
-    branch: resolute
+    branch: resolute # Должно соответствовать выбранной серии (noble или resolute)
     names:
       - minimal
+
 customization:
   extra-packages:
     - name: "u-boot-tools"
@@ -35,11 +37,20 @@ customization:
     - name: "apparmor"
     - name: "apparmor-utils"
     - name: "apparmor-profiles"
-    - name: "sudo"
+    # OEM-установщики (oem-config, ubiquity) отключены, так как образ создается как preinstalled (сразу готовый к работе)
+    # - name: "oem-config-gtk"
+    # - name: "ubiquity-frontend-gtk"
+    # - name: "yaru-theme-unity"
+    # - name: "aptdaemon"
+    # - name: "oem-config"
+    # - name: "oem-config-debconf"
+    # - name: "ubiquity-slideshow-ubuntu"
   extra-snaps:
     - name: snapd
     - name: core24
     - name: mesa-2404
+
+# ИСПРАВЛЕНИЕ: Вместо сломанного пустого блока 'img:' указываем вывод в формате tar-архива rootfs
 artifacts:
   tar:
     architecture: arm64
