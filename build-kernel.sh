@@ -34,7 +34,7 @@ cd "$linux_dir"
 BASE_DIR=$(pwd)
 
 # Клонируем ядро сразу в папку 'source' внутри виртуального диска
-git clone --depth 1 https://kernel.org -b linux-7.2.y source
+git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git -b linux-7.2.y source
 
 # Скачивание патчей медиа-декодера rkvdec
 mkdir patches && cd patches
