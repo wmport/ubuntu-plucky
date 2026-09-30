@@ -18,7 +18,7 @@ rootfs:
   pocket: updates
   seed:
     urls:
-      - "https://launchpad.net"
+       - "https://git.launchpad.net/~ubuntu-core-dev/ubuntu-seeds/+git/"
     branch: resolute # Должно соответствовать выбранной серии (noble или resolute)
     names:
       - minimal
