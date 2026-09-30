@@ -17,9 +17,8 @@ snap install --classic ubuntu-image
 ubuntu-image --debug --workdir build classic image-definition.yaml
 
 rm -rf build/root
-chmod +x setup-script.sh
-cp setup-script.sh build/chroot/
 
+# Функции монтирования окружения chroot
 setup_mountpoint() {
     local mountpoint="$1"
     if [ ! -c /dev/mem ]; then
@@ -47,21 +46,27 @@ teardown_mountpoint() {
     done
 }
 
+# 1. Сначала подготавливаем точки монтирования
 setup_mountpoint build/chroot
 mkdir -p build/chroot/kernel
 cp *.deb build/chroot/kernel/
 
-# Запуск скрипта установки пакетов ядра внутри окружения
+# 2. ИСПРАВЛЕНИЕ: Копируем скрипт настроек ТОЛЬКО после того, как все точки монтирования активны
+chmod +x setup-script.sh
+cp setup-script.sh build/chroot/
+
+# 3. Запуск скрипта установки пакетов ядра внутри изолированного окружения
 chroot build/chroot /setup-script.sh
 
+# 4. Корректный демонтаж и очистка
 teardown_mountpoint build/chroot
-rm build/chroot/setup-script.sh
+rm -f build/chroot/setup-script.sh
 rm -rf build/chroot/kernel
 
 rootfs="./ubuntu.rootfs.tar"
 echo "rootfs=$rootfs" > rootfs
 
-# ИСПРАВЛЕНИЕ: Вычисляем версию ARM64 ванильного ядра по имени установленного файла Image или по каталогу модулей
+# Вычисляем версию ARM64 ванильного ядра по имени установленного файла Image или по каталогу модулей
 if [ -d build/chroot/lib/modules ]; then
     kernel_version=$(ls -1 build/chroot/lib/modules | head -n 1)
 else
@@ -76,13 +81,14 @@ fi
 
 echo "kernel_version=$kernel_version" > kernel_version
 
-# Упаковываем RootFS
+# Упаковываем RootFS (Заходим внутрь, выполняем tar, возвращаемся обратно)
 cd build/chroot && tar -cf ../../$rootfs --xattrs ./*
 cd ../..
 
 if [ $mem_size -gt 15 ]; then
-    # ИСПРАВЛЕНИЕ: Выходим из папки перед размонтированием busy-диска
+    # Выходим из папки перед размонтированием busy-диска
     umount build
     sleep 2
 fi  
+
 exit 0
