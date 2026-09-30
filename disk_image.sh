@@ -102,6 +102,7 @@ sync --file-system && sync
 
 # ИСПРАВЛЕНИЕ 3: Передаем управление очисткой функции trap, чтобы избежать конфликтов блокировок ресурсов
 trap '' EXIT
+sgdisk -e "${disk}"
 cleanup_loopdev "${loop}"
 
 echo -e "\nCompressing $(basename "${img}.xz")\n"
