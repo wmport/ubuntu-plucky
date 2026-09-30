@@ -1,8 +1,17 @@
-#!/bin/bashset -eE
-export LANGUAGE=C LC_ALL=C LANG=C
+#!/bin/bash
+set -eE
+trap 'echo Error: in $0 on line $LINENO' ERR
+
+export LANGUAGE=C
+export LC_ALL=C
+export LANG=C
+
 rm -rf build && mkdir build
 
-mem_size=$(free --giga | grep Mem | awk '{print $2}')if [ $mem_size -gt 15 ]; then mount -t tmpfs -o size=13G tmpfs build; fi
+mem_size=$(free --giga | grep Mem | awk '{print $2}')
+if [ $mem_size -gt 15 ]; then
+     mount -t tmpfs -o size=13G tmpfs build
+fi
 
 snap install --classic ubuntu-image
 ubuntu-image --debug --workdir build classic image-definition.yaml
@@ -13,7 +22,10 @@ cp setup-script.sh build/chroot/
 
 setup_mountpoint() {
     local mountpoint="$1"
-    if [ ! -c /dev/mem ]; then mknod -m 660 /dev/mem c 1 1; chown root:kmem /dev/mem; fi
+    if [ ! -c /dev/mem ]; then
+        mknod -m 660 /dev/mem c 1 1
+        chown root:kmem /dev/mem
+    fi
     mount dev-live -t devtmpfs "$mountpoint/dev"
     mount devpts-live -t devpts -o nodev,nosuid "$mountpoint/dev/pts"
     mount proc-live -t proc "$mountpoint/proc"
@@ -26,7 +38,8 @@ setup_mountpoint() {
 }
 
 teardown_mountpoint() {
-    local mountpoint=$(realpath "$1")
+    local mountpoint
+    mountpoint=$(realpath "$1")
     mountpoint_match=$(echo "$mountpoint" | sed -e's,/$,,; s,/,\\/,g;')'\/'
     awk </proc/self/mounts "\$2 ~ /$mountpoint_match/ { print \$2 }" | LC_ALL=C sort -r | while IFS= read -r submount; do
         mount --make-private "$submount"
@@ -36,21 +49,40 @@ teardown_mountpoint() {
 
 setup_mountpoint build/chroot
 mkdir -p build/chroot/kernel
-cp *.deb build/chroot/kernel/ 2>/dev/null || true
+cp *.deb build/chroot/kernel/
 
+# Запуск скрипта установки пакетов ядра внутри окружения
 chroot build/chroot /setup-script.sh
 
 teardown_mountpoint build/chroot
-rm -f build/chroot/setup-script.sh
+rm build/chroot/setup-script.sh
 rm -rf build/chroot/kernel
 
 rootfs="./ubuntu.rootfs.tar"
 echo "rootfs=$rootfs" > rootfs
+
+# ИСПРАВЛЕНИЕ: Вычисляем версию ARM64 ванильного ядра по имени установленного файла Image или по каталогу модулей
 if [ -d build/chroot/lib/modules ]; then
-    kernel_version=$(ls -1 build/chroot/lib/modules | head -n 1)else
-    kernel_version=$(ls -1 build/chroot/boot/Image-* 2>/dev/null | head -n 1 | sed 's#.*/Image-##')fi
+    kernel_version=$(ls -1 build/chroot/lib/modules | head -n 1)
+else
+    # Резервный вариант парсинга ванильного имени Image-7.2.X
+    kernel_version=$(ls -1 build/chroot/boot/Image-* 2>/dev/null | head -n 1 | sed 's#.*/Image-##')
+fi
+
+if [ -z "$kernel_version" ]; then
+    echo "Ошибка: Не удалось определить версию установленного ядра в build/chroot!"
+    exit 1
+fi
+
 echo "kernel_version=$kernel_version" > kernel_version
 
+# Упаковываем RootFS
 cd build/chroot && tar -cf ../../$rootfs --xattrs ./*
-cd ../..if [ $mem_size -gt 15 ]; then umount build; fi  
+cd ../..
+
+if [ $mem_size -gt 15 ]; then
+    # ИСПРАВЛЕНИЕ: Выходим из папки перед размонтированием busy-диска
+    umount build
+    sleep 2
+fi  
 exit 0
