@@ -27,8 +27,10 @@ cd arm64
 BASE_DIR=$(pwd)
 
 # Клонирование официальных бинарных компонентов инициализации Rockchip
-git clone --depth 1 https://github.com/rockchip-linux/rkbin
-
+git clone https://github.com/rockchip-linux/rkbin
+cd rkbin# Откатываемся на проверенную стабильную ревизию от середины 2024 года
+git checkout 5567b55f1f91b7d532bbf2451f50df642e0fa527
+cd ..
 # Находим файлы внутри rkbin и сразу формируем валидный абсолютный путь
 DDR_FILE=$(ls rkbin/bin/rk35/rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v*.bin | head -n 1)
 BL31_FILE=$(ls rkbin/bin/rk35/rk3588_bl31*.elf | head -n 1)
