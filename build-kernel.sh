@@ -53,8 +53,8 @@ wget https://raw.githubusercontent.com/warpme/minimyth2/refs/heads/master/script
 # 3574-media-rkvdec-Add-support-for-the-VDPU346-variant.patch
 wget https://raw.githubusercontent.com/warpme/minimyth2/refs/heads/master/script/kernel/linux-7.2/files/3574-media-rkvdec-Add-support-for-the-VDPU346-variant.patch
 # ДОБАВИТЬ: патч питания SD-слота для NanoPC-T6
-wget -O nanopc-t6-sdmmc-regulator.patch \
-  "https://lore.kernel.org/r/20240102024054.1030313-1-inindev@gmail.com/raw"
+## wget -O nanopc-t6-sdmmc-regulator.patch \
+#  "https://lore.kernel.org/r/20240102024054.1030313-1-inindev@gmail.com/raw"
 
 cd "$BASE_DIR/source"
 
