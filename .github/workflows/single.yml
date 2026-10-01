@@ -32,7 +32,11 @@ jobs:
         run: /bin/bash ./das-u-boot.sh nanopc-t6-rk3588_defconfig
 
       - name: Build kernel
-        run: /bin/bash ./build-kernel.sh arm64 2>&1|tee log1
+        run: |
+          chmod +x build-kernel.sh
+          # Передаем имя сборочной папки 'kernel-build'
+          ./build-kernel.sh "kernel-build"
+
         
       - name: Build rootfs
         run: |
