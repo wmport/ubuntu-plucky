@@ -46,7 +46,7 @@ umount ${mount_point}/* 2> /dev/null || true
 mkdir -p ${mount_point}/writable
 
 # ============================================================
-# ШАГ 1: Сначала создаём таблицу разделов и раздел
+# ШАГ 1: Создание таблицы разделов GPT и раздела
 # ============================================================
 echo "=== Создание таблицы разделов GPT ==="
 dd if=/dev/zero of="${disk}" count=4096 bs=512 conv=notrunc
@@ -54,8 +54,10 @@ dd if=/dev/zero of="${disk}" count=4096 bs=512 conv=notrunc
 parted --script "${disk}" mklabel gpt
 parted --script "${disk}" mkpart primary ext4 16MiB 100%
 
-# Устанавливаем тип раздела Linux rootfs (GUID B921B045-1DF0-41C3-AF44-4C6F280D3FAE)
-{ echo "t"; echo "1"; echo "B921B045-1DF0-41C3-AF44-4C6F280D3FAE"; echo "w"; } | fdisk "${disk}" &> /dev/null || true
+# Устанавливаем тип раздела Linux rootfs через sgdisk (надёжнее, чем fdisk)
+# GUID B921B045-1DF0-41C3-AF44-4C6F280D3FAE = Linux rootfs (ARM64)
+echo "=== Установка типа раздела Linux rootfs ==="
+sgdisk --typecode=1:B921B045-1DF0-41C3-AF44-4C6F280D3FAE "${disk}"
 
 partprobe "${disk}"
 partition_char="$(if [[ ${disk: -1} == [0-9] ]]; then echo p; fi)"
@@ -63,9 +65,8 @@ sleep 1
 wait_loopdev "${disk}${partition_char}1" 60
 
 # ============================================================
-# ШАГ 2: ТОЛЬКО ТЕПЕРЬ записываем U-Boot в сектор 64
-# Это должно быть ПОСЛЕ создания разметки, иначе parted
-# может затереть загрузчик при создании GPT.
+# ШАГ 2: Запись U-Boot в сектор 64
+# ВАЖНО: только после создания разметки, иначе parted затрёт загрузчик
 # ============================================================
 echo "=== Запись U-Boot в сектор 64 ==="
 if [ -f "u-boot-rockchip.bin" ]; then
