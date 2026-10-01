@@ -29,7 +29,7 @@ jobs:
           sudo sysctl -w kernel.unprivileged_userns_clone=1 || true
 
       - name: Build u-boot for NanoPC T6
-        run: /bin/bash ./das-u-boot.sh rk3588_defconfig
+        run: /bin/bash ./das-u-boot.sh nanopc-t6-rk3588_defconfig
 
       - name: Build kernel
         run: /bin/bash ./build-kernel.sh arm64 2>&1|tee log1
