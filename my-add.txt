@@ -1,20 +1,28 @@
 # ====================================================================
-# 💽 Storage Configuration (M.2 NVMe, eMMC, SD-Card) - SATA Disabled
+# 💽 Настройки накопителей (M.2 NVMe, eMMC, SD-Card)
 # ====================================================================
 CONFIG_NET=y
 CONFIG_PCI=y
 CONFIG_PCI_DOMAINS=y
 CONFIG_PCI_DOMAINS_GENERIC=y
-CONFIG_PCIE_ROCKCHIP_DW_HOST=y
 CONFIG_BLK_DEV_SD=y
 CONFIG_CHR_DEV_SG=y
 
-# Native High-Speed NVMe Storage Drivers
+# Драйверы высокоскоростных NVMe SSD
 CONFIG_NVME_CORE=y
 CONFIG_BLK_DEV_NVME=y
 
+# ИСПРАВЛЕНИЕ: Базовые контроллеры SD/eMMC (без них плата не загрузится с флешки)
+CONFIG_MMC=y
+CONFIG_MMC_BLOCK=y
+CONFIG_MMC_DW=y
+CONFIG_MMC_DW_ROCKCHIP=y
+CONFIG_MMC_SDHCI=y
+CONFIG_MMC_SDHCI_PLTFM=y
+CONFIG_MMC_SDHCI_OF_ROCKCHIP=y
+
 # ====================================================================
-# 🔌 USB 3.0, Type-C, OTG and DisplayPort Alt Mode Support
+# 🔌 Поддержка USB 3.0, Type-C, OTG и DisplayPort Alt Mode
 # ====================================================================
 CONFIG_USB_SUPPORT=y
 CONFIG_USB=y
@@ -23,40 +31,39 @@ CONFIG_USB_XHCI_PLATFORM=y
 CONFIG_USB_EHCI_HCD=y
 CONFIG_USB_OHCI_HCD=y
 
-# Rockchip USB/Type-C PHY Core Drivers (Critical for USB 3.0 speed)
+# Rockchip USB/Type-C PHY кубики (Критично для скорости USB 3.0)
 CONFIG_PHY_ROCKCHIP_INNO_USB2=y
 CONFIG_PHY_ROCKCHIP_NANOSECOND_COMBPHY=y
 CONFIG_PHY_ROCKCHIP_USBDP=y
 
-# Type-C Controller and Power Delivery (Fusb302 Core)
+# Контроллер Type-C и управление питанием (Fusb302)
 CONFIG_TYPEC=y
 CONFIG_TYPEC_TCPM=y
 CONFIG_TYPEC_FUSB302=y
 
-# USB Gadget Support (For OTG / Device mode via Type-C)
+# Поддержка USB Gadget (Для режима OTG / Device через Type-C)
 CONFIG_USB_GADGET=y
 
 # ====================================================================
-# 🌐 2.5GbE Native Ethernet & Built-in Hardware Controllers
+# 🌐 Поддержка 2.5GbE Сети и встроенных контроллеров NanoPC-T6
 # ====================================================================
 CONFIG_NETDEVICES=y
 CONFIG_ETHERNET=y
 CONFIG_NET_VENDOR_REALTEK=y
 CONFIG_R8169=y
 
-# Networking Core PHY Management (Required for NanoPC-T6 2.5Gb ports)
+# Управление PHY (Обязательно для портов 2.5Gb Realtek/Motorcomm)
 CONFIG_PHYLINK=y
 CONFIG_PHYLIB=y
 CONFIG_REALTEK_PHY=y
 CONFIG_MOTORCOMM_PHY=m
 CONFIG_AT803X_PHY=m
 
-# Additional Networking Vendor Framework
 CONFIG_NET_VENDOR_SYNOPSYS=y
 CONFIG_NET_VENDOR_MOTORCOMM=y
 CONFIG_NET_VENDOR_ASIX=m
 
-# External USB-Ethernet Adapters Support
+# Внешние USB-Ethernet адаптеры
 CONFIG_USB_RTL8152=m
 CONFIG_USB_RTL8153_ECM=m
 CONFIG_USB_NET_AX8817X=m
@@ -66,7 +73,7 @@ CONFIG_USB_NET_AQC111=m
 CONFIG_USB_LAN78XX=m
 
 # ====================================================================
-# 🐧 Arch Linux ARM / MiniMyth2 Boot Requirements (cgroups & systemd)
+# 🐧 Системные требования для Ubuntu / Systemd / Snap (cgroups)
 # ====================================================================
 CONFIG_DEVTMPFS=y
 CONFIG_DEVTMPFS_MOUNT=y
@@ -90,23 +97,16 @@ CONFIG_IPC_NS=y
 CONFIG_USER_NS=y
 CONFIG_PID_NS=y
 CONFIG_NET_NS=y
-CONFIG_SYSFS_DEPRECATED=n
 
-# Module & Image Compression (ZSTD recommended)
-CONFIG_MODULE_COMPRESS=y
-CONFIG_MODULE_COMPRESS_ZSTD=y
-CONFIG_MODULE_COMPRESS_ALL=y
-CONFIG_MODULE_DECOMPRESS=y
-CONFIG_COMPRESSED_INSTALL=y
+# ИСПРАВЛЕНИЕ: Отключено сжатие модулей ядра через ZSTD
+# Это предотвращает падение initramfs/kmod внутри chroot при сборке rootfs
+CONFIG_MODULE_COMPRESS_NONE=y
+
 CONFIG_FW_LOADER=y
-CONFIG_FW_LOADER_COMPRESS=y
-CONFIG_FW_LOADER_COMPRESS_ZSTD=y
-
-# Target Platform Selection
 CONFIG_ARCH_ROCKCHIP=y
 
 # ====================================================================
-# 📂 File Systems (Required for NVMe/eMMC Boot and Mounting)
+# 📂 Файловые системы
 # ====================================================================
 CONFIG_EXT4_FS=y
 CONFIG_EXT4_USE_FOR_EXT2=y
@@ -122,7 +122,7 @@ CONFIG_TMPFS=y
 CONFIG_TMPFS_POSIX_ACL=y
 CONFIG_TMPFS_XATTR=y
 
-# SquashFS (Required for Snap / Ubuntu Core)
+# Поддержка SquashFS (Критично для работы Snap пакетов в Ubuntu)
 CONFIG_SQUASHFS_XATTR=y
 CONFIG_SQUASHFS_LZ4=y
 CONFIG_SQUASHFS_LZO=y
@@ -132,12 +132,10 @@ CONFIG_SQUASHFS_4K_DEVBLK_SIZE=y
 CONFIG_SQUASHFS_EMBEDDED=y
 
 # ====================================================================
-# 🛠️ Development & Debugging (Config Extraction Support)
+# 🛠️ Безопасность и Отладка (AppArmor / Landlock / Просмотр конфига)
 # ====================================================================
 CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
-
-# Security Configuration (Snap / AppArmor)
 CONFIG_SECURITY=y
 CONFIG_SECURITY_APPARMOR=y
 CONFIG_DEFAULT_SECURITY_APPARMOR=y
@@ -146,7 +144,7 @@ CONFIG_PERSISTENT_KEYRINGS=y
 CONFIG_SECURITY_LANDLOCK=y
 
 # ====================================================================
-# 🎬 Multimedia & Chromium Hardware Decoding Options
+# 🎬 Мультимедиа и аппаратное декодирование (VPU / GPU / Chromium)
 # ====================================================================
 CONFIG_MEDIA_SUPPORT=m
 CONFIG_MEDIA_PLATFORM_SUPPORT=y
@@ -160,7 +158,7 @@ CONFIG_VIDEO_ROCKCHIP_VDEC=m
 CONFIG_DRM_ACCEL=y
 CONFIG_DRM_ACCEL_ROCKET=m
 
-# VPU & DMA Buffer allocation (GPU↔VPU sharing)
+# IOMMU и DMA Буферы для сквозного обмена памяти (GPU ↔ VPU)
 CONFIG_ROCKCHIP_IOMMU=y
 CONFIG_UDMABUF=y
 CONFIG_DMABUF_HEAPS=y
@@ -169,16 +167,15 @@ CONFIG_DMABUF_HEAPS_CMA=y
 CONFIG_DMA_SHARED_BUFFER=y
 CONFIG_MEDIA_CONTROLLER=y
 CONFIG_VIDEO_V4L2_SUBDEV_API=y
-CONFIG_VSI_IOMMU=y
 
 # ====================================================================
-# 🎛️ ZRAM (Memory Compression) Activation
+# 🎛️ Сжатие оперативной памяти ZRAM
 # ====================================================================
 CONFIG_ZSMALLOC=y
 CONFIG_ZRAM=m
 
 # ====================================================================
-# 📶 Wi-Fi Core Configuration & Realtek RTL8822CE (rtw88) Drivers
+# 📶 Wi-Fi и Bluetooth (Встроенный чип Realtek RTL8822CE PCIe)
 # ====================================================================
 CONFIG_WIRELESS=y
 CONFIG_WLAN=y
@@ -186,16 +183,14 @@ CONFIG_WLAN_VENDOR_REALTEK=y
 CONFIG_CFG80211=m
 CONFIG_MAC80211=m
 
-# Realtek Wi-Fi 5 (rtw88) Mainline PCIe Drivers
+# Драйверы беспроводной сети rtw88
 CONFIG_RTW88=m
 CONFIG_RTW88_CORE=m
 CONFIG_RTW88_PCI=m
 CONFIG_RTW88_8822C=m
 CONFIG_RTW88_8822CE=m
 
-# ====================================================================
-# 🔷 Bluetooth Core & Realtek RTL8822CE Bluetooth Drivers
-# ====================================================================
+# Bluetooth стек и UART/USB транспорты
 CONFIG_BT=m
 CONFIG_BT_BREDR=y
 CONFIG_BT_RFCOMM=m
@@ -207,7 +202,6 @@ CONFIG_BT_HIDP=m
 CONFIG_BT_HS=y
 CONFIG_BT_LE=y
 
-# Bluetooth Core Drivers (USB and HCI UART transport)
 CONFIG_BT_HCIBTUSB=m
 CONFIG_BT_HCIBTUSB_AUTOSUSPEND=y
 CONFIG_BT_HCIBTUSB_BCM=y
@@ -216,52 +210,35 @@ CONFIG_BT_HCIBTUSB_RTL=y
 CONFIG_BT_HCIUART=m
 CONFIG_BT_HCIUART_H4=y
 CONFIG_BT_HCIUART_RTL=y
-
-# Realtek Bluetooth Extension
 CONFIG_BT_RTL=m
 
-# ====================================================================
-# 📶 Wi-Fi Core & External USB RTL8812AU Module Support
-# ====================================================================
-CONFIG_WIRELESS=y
-CONFIG_WLAN=y
-CONFIG_WLAN_VENDOR_REALTEK=y
-CONFIG_CFG80211=m
-CONFIG_MAC80211=m
-
-# Enable loadable module support (Critical for out-of-tree RTL8812AU drivers)
+# Поддержка модулей ядра (Обязательно для Wi-Fi/BT)
 CONFIG_MODULES=y
 CONFIG_MODULE_UNLOAD=y
 CONFIG_MODVERSIONS=y
 
 # ====================================================================
-# 📡 WWAN / Cellular Configuration (Required for Telit LM960)
+# 📡 Сотовые модемы LTE/5G (Telit LM960 / Qualcomm QMI / MBIM)
 # ====================================================================
 CONFIG_USB_NET_DRIVERS=y
 CONFIG_USB_USBNET=m
 CONFIG_USB_NET_CDCETHER=m
 CONFIG_USB_NET_CDC_NCM=m
-
-# Drivers for MBIM and QMI network interfaces
 CONFIG_USB_NET_CDC_MBIM=m
 CONFIG_USB_NET_QMI_WWAN=m
-
-# Qualcomm RMNET & QMAP Multi-PDN Multiplexing
 CONFIG_RMNET=m
 
-# Subdriver for device management via character devices (/dev/cdc-wdm)
-CONFIG_USB_WMI=y
+# ИСПРАВЛЕНИЕ: CONFIG_USB_WMI изменен на =m (для стабильности ARM64 шины)
+CONFIG_USB_WMI=m
 CONFIG_USB_NET_CDC_WDM=m
-
-# WWAN framework subsystem
 CONFIG_WWAN=m
 
 # ====================================================================
-# 🔌 Other Core Drivers & Rockchip SoC Peripherals
+# 🔌 Периферия SoC Rockchip и порты ввода (Включая опции Option/Telit)
 # ====================================================================
 CONFIG_ROCKCHIP_SARADC=y
 
-# USB Serial Drivers (Option driver is critical for Telit AT & GPS channels)
+# USB Serial (Option критичен для AT-команд и GPS каналов модемов)
 CONFIG_USB_SERIAL=y
 CONFIG_USB_SERIAL_CONSOLE=y
 CONFIG_USB_SERIAL_GENERIC=y
@@ -273,7 +250,7 @@ CONFIG_USB_SERIAL_FTDI_SIO=m
 CONFIG_USB_SERIAL_PL2303=m
 CONFIG_APPLE_MFI_FASTCHARGE=m
 
-# Input Subsystem (Essential Keyboards, Mice & Gamepads)
+# Драйверы ввода (Клавиатуры, мыши, геймпады Sony/Playstation/Nintendo/Steam)
 CONFIG_HID_APPLE=m
 CONFIG_HID_CHERRY=m
 CONFIG_HID_ELECOM=m
@@ -293,7 +270,7 @@ CONFIG_HID_STEAM=m
 CONFIG_HID_WACOM=m
 
 # ====================================================================
-# 🔤 NLS (Language tables) - UTF8 & Cyrillic/Base Compatibility
+# 🔤 Локализация и языковые таблицы (Поддержка UTF8 и кириллицы)
 # ====================================================================
 CONFIG_NLS=y
 CONFIG_NLS_DEFAULT="utf8"
