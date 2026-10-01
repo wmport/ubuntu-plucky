@@ -45,7 +45,7 @@ echo "================================================="
 echo ""
 
 # 3. Клонирование Mainline U-Boot stable release
-git clone --depth 1 https://gitlab.com/u-boot/u-boot.git -b v2024.01
+git clone --depth 1 https://gitlab.com/u-boot/u-boot.git -b v2024.10
 cd u-boot
 
 CONFIG_NAME=${1:-nanopc-t6-rk3588_defconfig}
