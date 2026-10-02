@@ -1,0 +1,95 @@
+name: Build NanoPC-T6 Ubuntu 24.04 UEFI SD Image (EDK2 + GRUB)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc "/usr/local/share/boost"
+          sudo docker image prune --all --force
+
+      - name: Install Host Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bison flex libssl-dev bc rsync kmod cpio xz-utils \
+            fakeroot parted udev dosfstools uuid-runtime git-lfs device-tree-compiler \
+            python3 python-is-python3 fdisk debhelper python3-pyelftools python3-setuptools \
+            python3-pkg-resources swig libfdt-dev libpython3-dev gawk ncurses-dev \
+            libelf-dev libgnutls28-dev libdw-dev uuid-dev gdisk \
+            debootstrap qemu-user-static binfmt-support \
+            gcc-aarch64-linux-gnu crossbuild-essential-arm64 \
+            squashfs-tools arch-install-scripts wget
+
+      # ============================================================
+      # ЭТАП 1: СБОРКА ЯДРА LINUX 7.2 С ПАТЧАМИ RKVDEC
+      # EDK2 не требует U-Boot, но ядро всё равно нужно с патчами
+      # ============================================================
+      - name: Build Linux 7.2 Kernel (ARM64 + rkvdec patches)
+        run: |
+          chmod +x build-kernel.sh
+          ./build-kernel.sh "kernel-build"
+
+      # ============================================================
+      # ЭТАП 2: СБОРКА ROOTFS UBUNTU 24.04 (noble)
+      # ============================================================
+      - name: Build Ubuntu RootFS
+        run: |
+          chmod +x ubuntu-image.sh
+          sudo ./ubuntu-image.sh
+
+      # ============================================================
+      # ЭТАП 3: СБОРКА UEFI-ОБРАЗА (ESP + GRUB EFI)
+      # Вместо U-Boot в секторе 64 — стандартная UEFI-разметка
+      # ============================================================
+      - name: Build UEFI Disk Image with ESP and GRUB
+        run: |
+          chmod +x uefi_disk_image.sh
+          sudo ./uefi_disk_image.sh arm64 nanopc-t6 rk3588-nanopc-t6
+
+      - name: Get current date
+        id: date
+        run: echo "now=$(date +'%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
+
+      - name: Get kernel version
+        id: kernel
+        run: |
+          if [ -f kernel_version ]; then
+            echo "kernel_version=$(cat kernel_version)" >> $GITHUB_OUTPUT
+          else
+            echo "kernel_version=7.2-rockchip" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release and Upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "NanoPC T6 UEFI Disk Image Build ${{ github.run_number }}"
+          body: |
+            NanoPC T6 UEFI-образ (EDK2 + GRUB EFI)
+            Билд собран: ${{ steps.date.outputs.now }}
+            Версия ядра: ${{ steps.kernel.outputs.kernel_version }}
+
+            ⚠️ ВАЖНО: Требуется прошивка EDK2 UEFI на плату.
+            Скачайте nanopc-t6_UEFI_Release_v1.1.img и запишите на eMMC.
+            U-Boot должен быть удалён со всех носителей (eMMC/SPI/SD).
+          draft: false
+          prerelease: false
+          files: |
+            ./images/Ubuntu-*.img.xz
+            ./*.deb
+          token: ${{ secrets.GITHUB_TOKEN }}
