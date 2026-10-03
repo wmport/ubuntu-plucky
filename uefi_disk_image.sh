@@ -130,22 +130,22 @@ cat > /boot/grub/grub.cfg << 'GRUB_CFG'
 set default="0"
 set timeout="3"
 
-menuentry "Ubuntu 24.04 LTS (Linux 7.2 Mainline patched)" {
+menuentry "Ubuntu 26.04 LTS (Linux 7.2 Mainline patched)" {
     insmod gzio
     insmod part_gpt
     insmod ext2
     search --no-floppy --fs-uuid --set=root ROOT_UUID_PLACEHOLDER
-    linux /boot/vmlinuz-7.2-rockchip root=UUID=ROOT_UUID_PLACEHOLDER rw console=ttyS2,1500000n8
-    initrd /boot/initrd.img-7.2-rockchip
+    linux /boot/vmlinuz-7.2.8-rockchip-dirty root=UUID=ROOT_UUID_PLACEHOLDER rw console=ttyS2,1500000n8
+    initrd /boot/initrd.img-7.2.8-rockchip-dirty
 }
 
-menuentry "Ubuntu 24.04 LTS (rescue mode)" {
+menuentry "Ubuntu 26.04 LTS (rescue mode)" {
     insmod gzio
     insmod part_gpt
     insmod ext2
     search --no-floppy --fs-uuid --set=root ROOT_UUID_PLACEHOLDER
-    linux /boot/vmlinuz-7.2-rockchip root=UUID=ROOT_UUID_PLACEHOLDER rw single
-    initrd /boot/initrd.img-7.2-rockchip
+    linux /boot/vmlinuz-7.2.8-rockchip-dirty root=UUID=ROOT_UUID_PLACEHOLDER rw single
+    initrd /boot/initrd.img-7.2.8-rockchip-dirty
 }
 GRUB_CFG
 
